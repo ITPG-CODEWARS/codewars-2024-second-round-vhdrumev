@@ -1,1 +1,6 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/fULRwKMW)
+# URL Shortener
+
+Got to work on it later. :)
+Overall, the theme is pretty easy for 8 days, I've made something like that around 10 times before.
+**BUT NO COPYING CODE BECAUSE IT IS CHEATING**
+
