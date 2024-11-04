@@ -6,7 +6,7 @@ function createSimpleQrCodeArray($url) {
         $binaryUrl .= str_pad(decbin(ord($char)), 8, '0', STR_PAD_LEFT);
     }
 
-    $size = 21; // standard????
+    $size = 21; // standard???? version 1 might actually not be enough!
     $booleanArray = array_fill(0, $size, array_fill(0, $size, false));
 
     // Fill the matrix with black (true) and white (false) based on binary representation
