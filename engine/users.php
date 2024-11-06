@@ -24,35 +24,41 @@ try {
         $username = trim($_POST['username']);
         $email = trim($_POST['email']);
         $password = trim($_POST['password']);
+        $confirm_password = trim($_POST['confirm_password']);
 
-        // Check if the username or email already exists
-        $stmt = $conn->prepare("SELECT * FROM users WHERE username = :username OR email = :email");
-        $stmt->bindParam(':username', $username);
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
-
-        if ($stmt->rowCount() > 0) {
-            echo "Username or Email already exists!";
+        // Check if passwords match
+        if ($password !== $confirm_password) {
+            echo "Passwords do not match!";
         } else {
-            // Hash and salt the password
-            $hashed_password = password_hash($password, PASSWORD_BCRYPT);
-
-            // Insert user into the database
-            $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (:username, :email, :password)");
+            // Check if the username or email already exists
+            $stmt = $conn->prepare("SELECT * FROM users WHERE username = :username OR email = :email");
             $stmt->bindParam(':username', $username);
             $stmt->bindParam(':email', $email);
-            $stmt->bindParam(':password', $hashed_password);
             $stmt->execute();
 
-            // Automatically log the user in
-            $_SESSION['user_id'] = $conn->lastInsertId();
-            $_SESSION['username'] = $username;
+            if ($stmt->rowCount() > 0) {
+                echo "Username or Email already exists!";
+            } else {
+                // Hash and salt the password
+                $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
-            redirect();
+                // Insert user into the database
+                $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (:username, :email, :password)");
+                $stmt->bindParam(':username', $username);
+                $stmt->bindParam(':email', $email);
+                $stmt->bindParam(':password', $hashed_password);
+                $stmt->execute();
+
+                // Automatically log the user in
+                $_SESSION['user_id'] = $conn->lastInsertId();
+                $_SESSION['username'] = $username;
+
+                redirect();
+            }
         }
     }
 
-    // Handle user login
+    // Handle user login (no changes needed)
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
         $username = trim($_POST['username']);
         $password = trim($_POST['password']);
@@ -79,7 +85,7 @@ try {
         }
     }
 
-    // Handle user update
+    // Handle user update (no changes needed)
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update') {
         if (!isset($_SESSION['user_id'])) {
             echo "You are not logged in!";
@@ -142,6 +148,20 @@ try {
 <html>
 <head>
     <title>User Registration, Login, and Profile Update</title>
+    <script>
+        // Function to toggle password visibility
+        function togglePassword(inputId, toggleId) {
+            const input = document.getElementById(inputId);
+            const toggle = document.getElementById(toggleId);
+            if (input.type === "password") {
+                input.type = "text";
+                toggle.textContent = "Hide";
+            } else {
+                input.type = "password";
+                toggle.textContent = "Show";
+            }
+        }
+    </script>
 </head>
 <body>
 <?php if (isset($_SESSION['user_id'])): ?>
@@ -150,13 +170,15 @@ try {
     <form method="post" action="">
         <input type="hidden" name="action" value="update">
         <label for="old_password">Old Password:</label><br>
-        <input type="password" name="old_password" required><br><br>
+        <input type="password" id="old_password" name="old_password" required>
+        <button type="button" onclick="togglePassword('old_password', 'toggleOld')">Show</button><br><br>
         <label for="new_username">New Username:</label><br>
         <input type="text" name="new_username"><br><br>
         <label for="new_email">New Email:</label><br>
         <input type="email" name="new_email"><br><br>
         <label for="new_password">New Password:</label><br>
-        <input type="password" name="new_password"><br><br>
+        <input type="password" id="new_password" name="new_password">
+        <button type="button" onclick="togglePassword('new_password', 'toggleNew')">Show</button><br><br>
         <input type="submit" value="Update Profile">
     </form>
     <a href="logout.php">Logout</a>
@@ -169,7 +191,11 @@ try {
         <label for="email">Email:</label><br>
         <input type="email" name="email" required><br><br>
         <label for="password">Password:</label><br>
-        <input type="password" name="password" required><br><br>
+        <input type="password" id="password" name="password" required>
+        <button type="button" onclick="togglePassword('password', 'togglePassword')">Show</button><br><br>
+        <label for="confirm_password">Confirm Password:</label><br>
+        <input type="password" id="confirm_password" name="confirm_password" required>
+        <button type="button" onclick="togglePassword('confirm_password', 'toggleConfirm')">Show</button><br><br>
         <input type="submit" value="Register">
     </form>
 
@@ -179,7 +205,8 @@ try {
         <label for="username">Username:</label><br>
         <input type="text" name="username" required><br><br>
         <label for="password">Password:</label><br>
-        <input type="password" name="password" required><br><br>
+        <input type="password" id="login_password" name="password" required>
+        <button type="button" onclick="togglePassword('login_password', 'toggleLogin')">Show</button><br><br>
         <input type="submit" value="Login">
     </form>
 <?php endif; ?>
