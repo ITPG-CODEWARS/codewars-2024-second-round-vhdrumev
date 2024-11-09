@@ -1,6 +1,11 @@
 <?php
 session_start(); // Start the session
 
+// Set headers to prevent caching issues
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // Database configuration
 $servername = "localhost";
 $username = "root";
@@ -18,14 +23,20 @@ try {
     if (isset($_GET['code'])) {
         $shortened_url = $_GET['code'];
 
-        // Find the original URL, click count, max clicks, and password from the database
-        $sql = "SELECT id, original_url, click_count, max_clicks, password FROM shortener WHERE shortened_url = :shortened_url";
+        // Find the original URL, click count, max clicks, expiration date, and password from the database
+        $sql = "SELECT id, original_url, click_count, max_clicks, password, expiration_date FROM shortener WHERE shortened_url = :shortened_url";
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':shortened_url', $shortened_url);
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($result) {
+            // Check if the link has expired
+            if (!empty($result['expiration_date']) && new DateTime() > new DateTime($result['expiration_date'])) {
+                echo "This shortened URL has expired!";
+                exit;
+            }
+
             // Check if the click count has reached the max clicks limit
             if (!empty($result['max_clicks']) && $result['click_count'] >= $result['max_clicks']) {
                 echo "This shortened URL has reached its maximum click limit!";
@@ -67,19 +78,26 @@ try {
     // Check if the form is submitted for URL shortening
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['original_url'])) {
         $original_url = $_POST['original_url'];
-        $custom_code = trim($_POST['custom_code']); // Custom short code from user
+        $custom_code = trim($_POST['custom_code']);
         $password = !empty($_POST['password']) ? password_hash($_POST['password'], PASSWORD_DEFAULT) : null;
         $max_clicks = !empty($_POST['max_clicks']) ? intval($_POST['max_clicks']) : null;
+        $expiration_date = !empty($_POST['expiration_date']) ? $_POST['expiration_date'] : null;
+
+        // Validate and set short code length
+        $short_code_length = isset($_POST['short_code_length']) ? intval($_POST['short_code_length']) : 6;
+        if ($short_code_length < 1) {
+            $short_code_length = 6;
+        }
 
         if (!empty($custom_code)) {
             if (isShortCodeUnique($conn, $custom_code)) {
                 $shortened_url = $custom_code;
-            } else { // TODO: make a do-while
+            } else {
                 $error_message = "The custom short code is already taken. Please choose a different one.";
             }
         } else {
             do {
-                $shortened_url = generateShortCode();
+                $shortened_url = generateShortCode($short_code_length);
             } while (!isShortCodeUnique($conn, $shortened_url));
         }
 
@@ -87,9 +105,11 @@ try {
             $sql = "INSERT INTO shortener (original_url, shortened_url, created_at, click_count";
             $sql .= $password ? ", password" : "";
             $sql .= $max_clicks !== null ? ", max_clicks" : "";
+            $sql .= $expiration_date ? ", expiration_date" : "";
             $sql .= ") VALUES (:original_url, :shortened_url, NOW(), 0";
             $sql .= $password ? ", :password" : "";
             $sql .= $max_clicks !== null ? ", :max_clicks" : "";
+            $sql .= $expiration_date ? ", :expiration_date" : "";
             $sql .= ")";
 
             $stmt = $conn->prepare($sql);
@@ -97,33 +117,12 @@ try {
             $stmt->bindParam(':shortened_url', $shortened_url);
             if ($password) $stmt->bindParam(':password', $password);
             if ($max_clicks !== null) $stmt->bindParam(':max_clicks', $max_clicks);
+            if ($expiration_date) $stmt->bindParam(':expiration_date', $expiration_date);
             $stmt->execute();
 
-            $shortened_url_id = $conn->lastInsertId(); // Get the ID of the newly inserted URL
-
-            // If the user is signed in, update their created_links
-            if (isset($_SESSION['user_id'])) {
-                $user_id = $_SESSION['user_id'];
-
-                // Retrieve the current created_links value
-                $user_stmt = $conn->prepare("SELECT created_links FROM users WHERE id = :user_id");
-                $user_stmt->bindParam(':user_id', $user_id);
-                $user_stmt->execute();
-                $user_result = $user_stmt->fetch(PDO::FETCH_ASSOC);
-
-                if ($user_result) {
-                    $created_links = json_decode($user_result['created_links'], true) ?: [];
-                    $created_links[] = $shortened_url_id; // Add the new ID to the array
-                    $created_links_json = json_encode($created_links); // Convert to JSON
-
-                    $update_user_stmt = $conn->prepare("UPDATE users SET created_links = :created_links WHERE id = :user_id");
-                    $update_user_stmt->bindParam(':created_links', $created_links_json);
-                    $update_user_stmt->bindParam(':user_id', $user_id);
-                    $update_user_stmt->execute();
-                }
-            }
-
             $_SESSION['success_message'] = "Shortened URL: <a href='?code=$shortened_url'>$shortened_url</a>";
+
+            // Redirect to refresh page
             header("Location: " . $_SERVER['PHP_SELF']);
             exit;
         }
@@ -133,7 +132,7 @@ try {
 }
 
 // Function to increment click count
-function incrementClickCount($conn, $shortened_url, $current_count) {
+function incrementClickCount($conn, $shortened_url, $current_count): void {
     $new_click_count = $current_count + 1;
     $update_stmt = $conn->prepare("UPDATE shortener SET click_count = :click_count WHERE shortened_url = :shortened_url");
     $update_stmt->bindParam(':click_count', $new_click_count);
@@ -189,6 +188,12 @@ function isShortCodeUnique($conn, $shortened_url): bool {
 
     <label for="max_clicks">Max Clicks (optional):</label><br>
     <input type="number" name="max_clicks" min="1"><br><br>
+
+    <label for="short_code_length">Short Code Length (optional, default 6):</label><br>
+    <input type="number" name="short_code_length" min="1"><br><br>
+
+    <label for="expiration_date">Expiration Date and Time (optional):</label><br>
+    <input type="datetime-local" name="expiration_date"><br><br>
 
     <input type="submit" value="Shorten URL">
 </form>

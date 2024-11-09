@@ -43,10 +43,13 @@ try {
                 $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
                 // Insert user into the database
-                $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (:username, :email, :password)");
+                $stmt = $conn->prepare("INSERT INTO users (username, email, password, created_links, last_login, created_at, updated_at) 
+                                        VALUES (:username, :email, :password, :created_links, NOW(), NOW(), NOW())");
                 $stmt->bindParam(':username', $username);
                 $stmt->bindParam(':email', $email);
                 $stmt->bindParam(':password', $hashed_password);
+                $emptyJson = json_encode([]);
+                $stmt->bindParam(':created_links', $emptyJson);
                 $stmt->execute();
 
                 // Automatically log the user in
@@ -109,6 +112,10 @@ try {
             if (!empty($new_username)) {
                 $stmt = $conn->prepare("UPDATE users SET username = :username WHERE id = :id");
                 $stmt->bindParam(':username', $new_username);
+                $stmt->bindParam(':id', $user_id);
+                $stmt->execute();
+
+                $stmt = $conn->prepare("UPDATE users SET updated_at = NOW() WHERE id = :id");
                 $stmt->bindParam(':id', $user_id);
                 $stmt->execute();
                 $_SESSION['username'] = $new_username;
