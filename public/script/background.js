@@ -1,6 +1,6 @@
 const gradients = [
     'linear-gradient(135deg, #6a11cb, #2575fc)',  // Purple to Blue Gradient
-    'linear-gradient(135deg, #00c6ff, #0072ff)',  // Blue to Dark Blue Gradient
+    'linear-gradient(135deg, #121212, #242424)'
     //'linear-gradient(135deg, #f8cdda, #1e3c72)'  // Light Pink to Navy Gradient
 ];
 
