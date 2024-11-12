@@ -186,7 +186,7 @@ try {
         }
 
         body {
-            background: linear-gradient(135deg, #3e8e41, #64b3a5);
+            background: linear-gradient(135deg, #121212, #242424);
             color: #fff;
             display: flex;
             flex-direction: column;
