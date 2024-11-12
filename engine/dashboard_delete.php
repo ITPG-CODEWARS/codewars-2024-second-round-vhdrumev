@@ -1,18 +1,53 @@
 <?php
-
 const USERNAME = 'root';
-const PASSWORD = 'root'; // password is like that not hashed just so you can change it fast
+const PASSWORD = 'root';
+
+const MAX_ATTEMPTS = 3;
+const WAIT_TIME = 10; // in seconds
+
+// Start the session to track attempts
+session_start();
+
+// Initialize the attempts counter if not already set
+if (!isset($_SESSION['attempts'])) {
+    $_SESSION['attempts'] = 0;
+}
+
+// if the user exceeds the maximum attempts, force them to wait
+if ($_SESSION['attempts'] >= MAX_ATTEMPTS) {
+    $waitUntil = $_SESSION['wait_until'] ?? 0; // isset($_SESSION['wait_until']) ? $_SESSION['wait_until'] : 0 (short)
+    if ($waitUntil > time()) {
+        // If the user is still in the wait period
+        $remainingWait = $waitUntil - time();
+        echo "Too many failed attempts. Please wait $remainingWait seconds.";
+        exit;
+    } else {
+        // give on emore chance
+        $_SESSION['attempts']--;
+    }
+}
 
 // Check if the user has sent an Authorization header
 if (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']) ||
     $_SERVER['PHP_AUTH_USER'] !== USERNAME || $_SERVER['PHP_AUTH_PW'] !== PASSWORD) {
 
-    // If not, prompt for username and password
+    // If not, increment the failed attempts counter
+    $_SESSION['attempts']++;
+
+    // If attempts exceed the maximum, start the wait period
+    if ($_SESSION['attempts'] >= MAX_ATTEMPTS) {
+        $_SESSION['wait_until'] = time() + WAIT_TIME; // Set wait period
+        echo 'Too many failed attempts. Please try again after 10 seconds.';
+        exit;
+    }
+
+    // if any sneak traps, display this:
     header('HTTP/1.1 401 Unauthorized');
     header('WWW-Authenticate: Basic realm="Restricted Area"');
-    echo 'Authorization required.';
-    exit;
-}
+    echo 'Authorization required. Attempt ' . $_SESSION['attempts'] . ' of ' . MAX_ATTEMPTS . '.';
+    exit; // this is very important
+} // from now on code is shown ONLY if correct username and password are given
+
 
 session_start();
 
