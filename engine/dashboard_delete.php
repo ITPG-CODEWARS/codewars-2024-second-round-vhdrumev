@@ -23,7 +23,7 @@ if ($_SESSION['attempts'] >= MAX_ATTEMPTS) {
         exit;
     } else {
         // give on emore chance
-        $_SESSION['attempts']--;
+        $_SESSION['attempts'] = 0;
     }
 }
 
