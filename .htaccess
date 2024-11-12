@@ -1,2 +1,7 @@
 RewriteEngine On
-RewriteRule ^([a-zA-Z0-9]+)$ index.php?code=$1 [L,QSA]
+
+RewriteRule ^profile$ engine/users.php [L] # select file
+RewriteRule ^dashboard/update$ engine/dashboard_update.php [L] # select file
+RewriteRule ^dashboard/delete$ engine/dashboard_delete.php [L] # selct file
+
+RewriteRule ^([a-zA-Z0-9]+)$ index.php?code=$1 [L,QSA] # make ./?code=abc123 to ./abc123

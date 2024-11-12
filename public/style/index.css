@@ -1,0 +1,132 @@
+/* global */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-size: cover;
+}
+
+.url-form {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem 2rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 600px;
+    color: #fff;
+    min-height: 400px;
+}
+
+h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+h2 a {
+    color: #f1f1f1;
+    text-decoration: underline;
+}
+
+h2 a:hover {
+    text-decoration: underline;
+}
+
+.success-message {
+    background-color: #4CAF5080;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.error-message {
+    background-color: rgba(255, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+label {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    color: #ddd;
+}
+
+input[type="url"],
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="datetime-local"] {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1rem;
+    transition: .25s;
+}
+
+input[type="url"]:focus,
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="datetime-local"]:focus {
+    border-radius: 20px;
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.4);
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+input[type="submit"] {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 1rem;
+    width: 100%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+input[type="submit"]:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+input[type="submit"]:active {
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
+button[type="button"] {
+    background: none;
+    color: #f1f1f1;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+button[type="button"]:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+@media screen and (max-width: 600px) {
+    .url-form {
+        padding: 1.25rem 1.5rem; /* slightly adjust padding for smaller screens (phones) */
+    }
+}
+

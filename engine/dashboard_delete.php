@@ -1,4 +1,19 @@
 <?php
+
+const USERNAME = 'root';
+const PASSWORD = 'root'; // password is like that not hashed just so you can change it fast
+
+// Check if the user has sent an Authorization header
+if (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']) ||
+    $_SERVER['PHP_AUTH_USER'] !== USERNAME || $_SERVER['PHP_AUTH_PW'] !== PASSWORD) {
+
+    // If not, prompt for username and password
+    header('HTTP/1.1 401 Unauthorized');
+    header('WWW-Authenticate: Basic realm="Restricted Area"');
+    echo 'Authorization required.';
+    exit;
+}
+
 session_start();
 
 // Database variables
@@ -30,6 +45,8 @@ try {
         $_SESSION['deleted_users'] = [];
     }
 
+    // just a mess T^T
+
     // Handle delete/restore functionality
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (isset($_POST['delete_shortener'])) {
@@ -38,18 +55,18 @@ try {
             $_SESSION['deleted_shortener'][] = $idToDelete;
         } elseif (isset($_POST['restore_shortener'])) {
             $idToRestore = $_POST['restore_shortener'];
-            // Remove ID from the deleted_shortener session array
+            // remove ID from the deleted_shortener session array
             $_SESSION['deleted_shortener'] = array_diff($_SESSION['deleted_shortener'], [$idToRestore]);
         } elseif (isset($_POST['delete_user'])) {
             $idToDelete = $_POST['delete_user'];
-            // Add ID to the deleted_users session array
+            // add ID to the deleted_users session array
             $_SESSION['deleted_users'][] = $idToDelete;
         } elseif (isset($_POST['restore_user'])) {
             $idToRestore = $_POST['restore_user'];
             // Remove ID from the deleted_users session array
             $_SESSION['deleted_users'] = array_diff($_SESSION['deleted_users'], [$idToRestore]);
         } elseif (isset($_POST['update'])) {
-            // Delete items marked for deletion in the shortener table
+            // delete items marked for deletion in the shortener table
             if (isset($_SESSION['deleted_shortener'])) {
                 foreach ($_SESSION['deleted_shortener'] as $deletedId) {
                     $stmt = $conn->prepare("DELETE FROM shortener WHERE id = :id");
@@ -60,7 +77,7 @@ try {
                 unset($_SESSION['deleted_shortener']);
             }
 
-            // Delete items marked for deletion in the users table
+            // remove items marked for deletion in the users table
             if (isset($_SESSION['deleted_users'])) {
                 foreach ($_SESSION['deleted_users'] as $deletedId) {
                     $stmt = $conn->prepare("DELETE FROM users WHERE id = :id");
@@ -71,15 +88,15 @@ try {
                 unset($_SESSION['deleted_users']);
             }
 
-            // Refresh the page to show updated data
+            // refresh the page to show updated data
             header("Location: " . $_SERVER['PHP_SELF']);
             exit();
         }
     }
 
     // Prepare data for display
-    $deletedShortenerIds = isset($_SESSION['deleted_shortener']) ? $_SESSION['deleted_shortener'] : [];
-    $deletedUserIds = isset($_SESSION['deleted_users']) ? $_SESSION['deleted_users'] : [];
+    $deletedShortenerIds = $_SESSION['deleted_shortener'] ?? []; // isset($_SESSION['deleted_shortener']) ? $_SESSION['deleted_shortener'] : [] (short form)
+    $deletedUserIds = $_SESSION['deleted_users'] ?? []; // isset($_SESSION['deleted_users']) ? $_SESSION['deleted_users'] : [] (short form)
 
 } catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
@@ -93,22 +110,107 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Management</title>
     <style>
+
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: #fff;
+        }
+
+        /* Table Container */
         table {
-            width: 100%;
+            width: 80%;
+            margin: 20px 0;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
-        table, th, td {
-            border: 1px solid black;
-        }
+
         th, td {
-            padding: 8px;
+            padding: 15px;
             text-align: left;
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
         }
-        .deleted {
-            background-color: red;
-            color: white;
+
+        th {
+            background: rgba(0, 0, 0, 0.3);
         }
+
+        tr {
+            transition: background-color 0.3s;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        tr.deleted {
+            background-color: rgba(255, 0, 0, 0.2);
+        }
+
+        button {
+            background-color: rgba(255, 255, 255, 0.0);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            line-height: 100%;
+
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        form {
+            display: inline;
+        }
+
+        /* Update Button */
+        form button {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+        }
+
+        @media screen and (max-width: 768px) {
+            table {
+                width: 95%;
+            }
+
+            th, td {
+                padding: 12px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -183,6 +285,11 @@ try {
 <form method="post">
     <button type="submit" name="update">Update</button>
 </form>
+
+
+<script type="text/javascript" src="../public/script/background.js"></script>
+<script type="text/javascript" src="../public/script/password.js"></script>
+<script type="text/javascript" src="../public/script/scroll.js"></script>
 
 </body>
 </html>
